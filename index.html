@@ -2,326 +2,665 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>英文單字練習表</title>
     <style>
+        :root {
+            --bg: #f5f6f8;
+            --card: #ffffff;
+            --line: #d9dde3;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #2563eb;
+            --danger: #ef4444;
+            --ok: #16a34a;
+        }
+        * { box-sizing: border-box; }
         body {
+            margin: 0;
             font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .wrap {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
         }
         h1 {
+            margin: 0 0 18px 0;
             text-align: center;
+            font-size: 40px;
         }
-        .form-container {
-            background: #ffffff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
         }
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 10px;
+        .input-row, .tool-row {
+            display: grid;
+            gap: 12px;
+            align-items: end;
         }
-        .form-row label {
-            flex: 1 1 150px;
+        .input-row { grid-template-columns: 2fr 1fr auto; }
+        .tool-row { grid-template-columns: 1.2fr 220px; margin-top: 12px; }
+        label {
             display: flex;
             flex-direction: column;
-            font-size: 14px;
+            gap: 6px;
+            font-size: 15px;
+            font-weight: 600;
         }
-        .form-row input {
-            padding: 6px 8px;
-            font-size: 14px;
-            margin-top: 3px;
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            font-size: 16px;
+            background: #fff;
+        }
+        input:focus, select:focus {
+            outline: 2px solid rgba(37,99,235,0.18);
+            border-color: var(--accent);
         }
         button {
-            padding: 8px 16px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+            padding: 10px 14px;
+            font-size: 15px;
+        }
+        .primary {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+            font-weight: 700;
+        }
+        .danger {
+            background: #fff5f5;
+            color: #b91c1c;
+            border-color: #fecaca;
+        }
+        .secondary { background: #f8fafc; }
+        .status {
+            margin-top: 10px;
             font-size: 14px;
-            cursor: pointer;
+            color: var(--muted);
+            min-height: 22px;
+            line-height: 1.6;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #ffffff;
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        .letter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
         }
-        th, td {
-            border: 1px solid #ddd;
+        .letter-btn {
+            min-width: 38px;
             padding: 8px 10px;
-            text-align: left;
+            font-weight: 700;
         }
-        th {
-            background-color: #f0f0f0;
+        .letter-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
         }
-        .speak-btn, .delete-btn {
-            padding: 4px 10px;
+        .group {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            margin-bottom: 14px;
+            overflow: hidden;
+        }
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--line);
+            font-size: 24px;
+            font-weight: 800;
             cursor: pointer;
+            user-select: none;
         }
-        .delete-btn {
-            background-color: #ff6666;
-            color: white;
-            border: none;
-            border-radius: 4px;
+        .group-count {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--muted);
         }
-        .delete-btn:hover {
-            background-color: #cc0000;
+        .group-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        .note {
+        .toggle-icon {
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            font-size: 14px;
+            background: #fff;
+            transition: transform 0.2s ease;
+        }
+        .group.collapsed .group-body { display: none; }
+        .group.collapsed .toggle-icon { transform: rotate(-90deg); }
+        .group-body { padding: 10px 14px 14px 14px; }
+        .word-row {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1.4fr auto;
+            gap: 10px;
+            align-items: start;
+            padding: 10px 0;
+            border-bottom: 1px dashed var(--line);
+        }
+        .word-row:last-child { border-bottom: none; }
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .field-title {
             font-size: 12px;
-            color: #666;
+            color: var(--muted);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .edit-input {
+            padding: 8px 10px;
+            font-size: 15px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            width: 100%;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .small-btn { padding: 8px 10px; font-size: 14px; }
+        .empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 28px 10px;
+            background: var(--card);
+            border: 1px dashed var(--line);
+            border-radius: 16px;
+        }
+        .tip {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        @media (max-width: 980px) {
+            .input-row, .tool-row, .word-row { grid-template-columns: 1fr; }
+            .actions { justify-content: flex-start; }
+            h1 { font-size: 32px; }
         }
     </style>
 </head>
 <body>
-    <h1>英文單字練習表</h1>
+    <div class="wrap">
+        <h1>英文單字練習表</h1>
 
-    <div class="form-container">
-        <form id="wordForm">
-            <div class="form-row">
+        <div class="panel">
+            <form id="wordForm">
+                <div class="input-row">
+                    <label>
+                        英文單字（只要輸入這個）
+                        <input type="text" id="wordInput" placeholder="例如：opacity" required>
+                    </label>
+
+                    <label>
+                        快速搜尋目前清單
+                        <input type="text" id="searchInput" placeholder="輸入關鍵字快速篩選">
+                    </label>
+
+                    <button type="submit" id="addBtn" class="primary">新增到清單</button>
+                </div>
+            </form>
+
+            <div class="tool-row">
                 <label>
-                    英文單字（必填）
-                    <input type="text" id="wordInput" placeholder="例如：cat" required>
+                    字母分類
+                    <select id="letterFilter">
+                        <option value="ALL">全部字母</option>
+                    </select>
                 </label>
-                <label>
-                    音標（自動填入，可視需要修改）
-                    <input type="text" id="phoneticInput" placeholder="會自動帶入 /kæt/">
-                </label>
-                <label>
-                    中文翻譯（自動填入，可視需要修改）
-                    <input type="text" id="meaningInput" placeholder="會自動帶入：貓">
-                </label>
+
+                <button type="button" id="clearAllBtn" class="danger">清空全部單字</button>
             </div>
-            <button type="submit">新增到表格</button>
-            <span class="note">
-                只要輸入「英文單字」→ 按 Enter 或「新增到表格」，會先自動查音標＋中文，再一起加入下方表格。
-            </span>
-        </form>
+
+            <div class="letter-bar" id="letterBar"></div>
+            <div class="status" id="statusText">載入中...</div>
+            <div class="tip">
+                新增時會自動聯網查英標與中文翻譯。<br>
+                如果抓到的內容不理想，你可以直接在每一列裡改字、改英標、改中文，改完會同步到 Google Sheet。<br>
+                每個字母群組都可收合，換電腦也能看到同一份資料。
+            </div>
+        </div>
+
+        <div id="listContainer"></div>
     </div>
 
-    <table id="wordTable">
-        <thead>
-            <tr>
-                <th>英文單字</th>
-                <th>音標</th>
-                <th>中文翻譯</th>
-                <th>發音</th>
-                <th>刪除</th>
-            </tr>
-        </thead>
-        <tbody id="wordTableBody">
-        </tbody>
-    </table>
-
     <script>
-        // ---------------- 基本資料儲存 ----------------
+        const API_URL = "https://script.google.com/macros/s/AKfycbyOIzwrZudp4jAVt6o7LVQXKdFj06XTflULemvlgpkglw4JW-L5HYa2N2iuii_aKLKYIA/exec";
         let words = [];
-        const STORAGE_KEY = "vocabList";
+        let collapsedLetters = {};
 
         const wordForm = document.getElementById("wordForm");
         const wordInput = document.getElementById("wordInput");
-        const phoneticInput = document.getElementById("phoneticInput");
-        const meaningInput = document.getElementById("meaningInput");
-        const wordTableBody = document.getElementById("wordTableBody");
+        const searchInput = document.getElementById("searchInput");
+        const letterFilter = document.getElementById("letterFilter");
+        const letterBar = document.getElementById("letterBar");
+        const listContainer = document.getElementById("listContainer");
+        const statusText = document.getElementById("statusText");
+        const clearAllBtn = document.getElementById("clearAllBtn");
+        const addBtn = document.getElementById("addBtn");
 
-        // 內建簡單字典：英文 → 中文
-        const BUILTIN_ZH_DICT = {
-            "cat": "貓",
-            "dog": "狗",
-            "apple": "蘋果",
-            "book": "書",
-            "boy": "男孩",
-            "girl": "女孩",
-            "teacher": "老師",
-            "student": "學生",
-            "school": "學校",
-            "table": "桌子",
-            "chair": "椅子",
-            "computer": "電腦",
-            "phone": "手機",
-            "tilde": "波浪號"
-        };
-
-        function loadFromStorage() {
-            try {
-                const data = localStorage.getItem(STORAGE_KEY);
-                if (data) {
-                    words = JSON.parse(data);
-                } else {
-                    words = [
-                        { word: "cat", phonetic: "/kæt/", meaning: "貓" },
-                        { word: "dog", phonetic: "/dɔːɡ/", meaning: "狗" }
-                    ];
-                }
-            } catch (e) {
-                console.error("讀取 localStorage 失敗", e);
-                words = [];
-            }
+        function uid() {
+            return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
         }
 
-        function saveToStorage() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+        function escapeHtml(text) {
+            return String(text || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\"/g, "&quot;")
+                .replace(/'/g, "&#39;");
         }
 
-        // ---------------- 發音與刪除 ----------------
+        function firstLetterOf(word) {
+            const first = (word || "").trim().charAt(0).toUpperCase();
+            return /^[A-Z]$/.test(first) ? first : "#";
+        }
+
+        function setStatus(text) {
+            statusText.textContent = text || "";
+        }
+
         function speakWord(word) {
             if (!("speechSynthesis" in window)) {
                 alert("此瀏覽器不支援語音朗讀。");
                 return;
             }
-            if (!word) return;
-
+            window.speechSynthesis.cancel();
             const utter = new SpeechSynthesisUtterance(word);
             utter.lang = "en-US";
             window.speechSynthesis.speak(utter);
         }
 
-        function deleteWord(index) {
-            words.splice(index, 1);
-            saveToStorage();
-            renderTable();
+        async function apiGetList() {
+            const res = await fetch(API_URL + "?action=list");
+            return await res.json();
         }
 
-        function renderTable() {
-            wordTableBody.innerHTML = "";
-            words.forEach((item, index) => {
-                const tr = document.createElement("tr");
-                tr.innerHTML =
-                    "<td>" + (item.word || "") + "</td>" +
-                    "<td>" + (item.phonetic || "") + "</td>" +
-                    "<td>" + (item.meaning || "") + "</td>" +
-                    "<td><button type='button' class='speak-btn' data-word='" + item.word + "'>🔊 發音</button></td>" +
-                    "<td><button type='button' class='delete-btn' data-index='" + index + "'>刪除</button></td>";
-                wordTableBody.appendChild(tr);
+        async function apiPost(payload) {
+            const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload)
+            });
+            return await res.json();
+        }
+
+        async function loadWords() {
+            setStatus("正在從 Google Sheet 載入資料...");
+            try {
+                const result = await apiGetList();
+                words = result && result.ok && Array.isArray(result.data) ? result.data : [];
+                renderList();
+                setStatus("已載入 " + words.length + " 筆單字。資料已與 Google Sheet 同步。");
+            } catch (e) {
+                console.error(e);
+                setStatus("載入失敗，請檢查 Apps Script 部署權限或稍後重整。");
+            }
+        }
+
+        function buildLetterOptions() {
+            const letters = Array.from(new Set(words.map(item => firstLetterOf(item.word)))).sort();
+            const selected = letterFilter.value || "ALL";
+
+            letterFilter.innerHTML = '<option value="ALL">全部字母</option>';
+            letters.forEach(letter => {
+                const op = document.createElement("option");
+                op.value = letter;
+                op.textContent = letter;
+                letterFilter.appendChild(op);
+            });
+
+            if ([...letterFilter.options].some(op => op.value === selected)) {
+                letterFilter.value = selected;
+            } else {
+                letterFilter.value = "ALL";
+            }
+
+            letterBar.innerHTML = "";
+            const allBtn = document.createElement("button");
+            allBtn.type = "button";
+            allBtn.className = "letter-btn" + (letterFilter.value === "ALL" ? " active" : "");
+            allBtn.textContent = "全部";
+            allBtn.dataset.letter = "ALL";
+            letterBar.appendChild(allBtn);
+
+            letters.forEach(letter => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "letter-btn" + (letterFilter.value === letter ? " active" : "");
+                btn.textContent = letter;
+                btn.dataset.letter = letter;
+                letterBar.appendChild(btn);
             });
         }
 
-        wordTableBody.addEventListener("click", function (event) {
-            const target = event.target;
-            if (target.classList.contains("speak-btn")) {
-                const w = target.getAttribute("data-word");
-                speakWord(w);
-            }
-            if (target.classList.contains("delete-btn")) {
-                const idx = parseInt(target.getAttribute("data-index"), 10);
-                deleteWord(idx);
-            }
-        });
+        function getFilteredWords() {
+            const keyword = searchInput.value.trim().toLowerCase();
+            const letter = letterFilter.value;
+            return words.filter(item => {
+                const hitKeyword = !keyword ||
+                    (item.word || "").toLowerCase().includes(keyword) ||
+                    (item.phonetic || "").toLowerCase().includes(keyword) ||
+                    (item.meaning || "").toLowerCase().includes(keyword);
 
-        // ---------------- 自動查音標＋中文 ----------------
-        async function fetchPhonetic(wordLower) {
+                const hitLetter = letter === "ALL" || firstLetterOf(item.word) === letter;
+                return hitKeyword && hitLetter;
+            });
+        }
+
+        function renderList() {
+            buildLetterOptions();
+            const filtered = getFilteredWords();
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = '<div class="empty">目前沒有符合條件的單字。</div>';
+                return;
+            }
+
+            const groups = {};
+            filtered.forEach(item => {
+                const letter = firstLetterOf(item.word);
+                if (!groups[letter]) groups[letter] = [];
+                groups[letter].push(item);
+            });
+
+            const letters = Object.keys(groups).sort();
+            let html = "";
+
+            letters.forEach(letter => {
+                const items = groups[letter].sort((a, b) => String(a.word).localeCompare(String(b.word)));
+                const isCollapsed = !!collapsedLetters[letter];
+                html += '<section class="group' + (isCollapsed ? ' collapsed' : '') + '" data-letter="' + escapeHtml(letter) + '">';
+                html += '<div class="group-header">';
+                html += '<div class="group-left"><span class="toggle-icon">▼</span><span>' + escapeHtml(letter) + '</span></div>';
+                html += '<span class="group-count">' + items.length + ' 個單字</span>';
+                html += '</div>';
+                html += '<div class="group-body">';
+
+                items.forEach(item => {
+                    html += '<div class="word-row" data-id="' + escapeHtml(item.id) + '">';
+                    html += '<div class="field"><div class="field-title">英文單字</div><input class="edit-input" data-field="word" value="' + escapeHtml(item.word || "") + '"></div>';
+                    html += '<div class="field"><div class="field-title">英標</div><input class="edit-input" data-field="phonetic" value="' + escapeHtml(item.phonetic || "") + '" placeholder="可自行修改"></div>';
+                    html += '<div class="field"><div class="field-title">中文翻譯</div><input class="edit-input" data-field="meaning" value="' + escapeHtml(item.meaning || "") + '" placeholder="可自行修改"></div>';
+                    html += '<div class="actions">';
+                    html += '<button type="button" class="small-btn secondary speak-btn" data-word="' + escapeHtml(item.word || "") + '">🔊 發音</button>';
+                    html += '<button type="button" class="small-btn secondary refresh-btn" data-id="' + escapeHtml(item.id) + '">重新查詢</button>';
+                    html += '<button type="button" class="small-btn danger delete-btn" data-id="' + escapeHtml(item.id) + '">刪除</button>';
+                    html += '</div></div>';
+                });
+
+                html += '</div></section>';
+            });
+
+            listContainer.innerHTML = html;
+        }
+
+        async function fetchPhonetic(word) {
             try {
-                const url = "https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(wordLower);
+                const url = "https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(word);
                 const res = await fetch(url);
-                if (!res.ok) {
-                    return "";
-                }
+                if (!res.ok) return "";
                 const data = await res.json();
-                let phoneticText = "";
-
-                if (Array.isArray(data) && data.length > 0) {
-                    const entry = data[0];
-                    if (entry.phonetics && entry.phonetics.length > 0) {
-                        const targetPhon = entry.phonetics.find(function (p) { return p.text; }) || entry.phonetics[0];
-                        if (targetPhon && targetPhon.text) {
-                            phoneticText = targetPhon.text;
-                        }
-                    } else if (entry.phonetic) {
-                        phoneticText = entry.phonetic;
-                    }
+                if (!Array.isArray(data) || !data[0]) return "";
+                if (Array.isArray(data[0].phonetics)) {
+                    const found = data[0].phonetics.find(p => p && p.text);
+                    if (found && found.text) return found.text;
                 }
-                return phoneticText;
+                return data[0].phonetic || "";
             } catch (e) {
-                console.error("連線錯誤，無法查詢音標", e);
+                console.error("fetchPhonetic error", e);
                 return "";
             }
         }
 
-        async function autoLookup(word) {
-            const lower = word.toLowerCase();
-
-            // 先清掉顯示欄位，避免舊資料殘留
-            phoneticInput.value = "";
-            meaningInput.value = "";
-            phoneticInput.placeholder = "查詢中...";
-            meaningInput.placeholder = "查詢中...";
-
-            const phoneticFromApi = await fetchPhonetic(lower);
-
-            let phonetic = phoneticFromApi;
-            let meaning = "";
-
-            if (BUILTIN_ZH_DICT.hasOwnProperty(lower)) {
-                meaning = BUILTIN_ZH_DICT[lower];
+        async function fetchChineseTranslation(word) {
+            const tries = [
+                async function () {
+                    const url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(word) + "&langpair=en|zh-TW";
+                    const res = await fetch(url);
+                    if (!res.ok) return "";
+                    const data = await res.json();
+                    if (data && data.responseData && data.responseData.translatedText) {
+                        const text = data.responseData.translatedText.trim();
+                        if (text && text.toLowerCase() !== word.toLowerCase()) return text;
+                    }
+                    return "";
+                },
+                async function () {
+                    const url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(word) + "&langpair=en|zh-CN";
+                    const res = await fetch(url);
+                    if (!res.ok) return "";
+                    const data = await res.json();
+                    if (data && data.responseData && data.responseData.translatedText) {
+                        const text = data.responseData.translatedText.trim();
+                        if (text && text.toLowerCase() !== word.toLowerCase()) return text;
+                    }
+                    return "";
+                }
+            ];
+            for (const fn of tries) {
+                try {
+                    const result = await fn();
+                    if (result) return result;
+                } catch (e) {
+                    console.error(e);
+                }
             }
-
-            // 將查到的內容顯示在上方欄位，方便你確認／修改
-            if (phonetic) {
-                phoneticInput.value = phonetic;
-            }
-            if (meaning) {
-                meaningInput.value = meaning;
-            }
-
-            // 還原 placeholder
-            phoneticInput.placeholder = "會自動帶入 /kæt/";
-            meaningInput.placeholder = "會自動帶入：貓";
-
-            // 讓呼叫者知道查到什麼
-            return {
-                phonetic: phonetic,
-                meaning: meaning
-            };
+            return "";
         }
 
-        // ---------------- 表單送出流程 ----------------
-        wordForm.addEventListener("submit", async function (event) {
-            event.preventDefault();
+        async function lookupWord(word) {
+            const cleanWord = word.trim();
+            const phoneticPromise = fetchPhonetic(cleanWord.toLowerCase());
+            const meaningPromise = fetchChineseTranslation(cleanWord);
+            const phonetic = await phoneticPromise;
+            const meaning = await meaningPromise;
+            return { phonetic, meaning };
+        }
 
-            const wordRaw = wordInput.value.trim();
-            if (!wordRaw) {
-                alert("請先輸入英文單字。");
+        async function addWord(word) {
+            const cleanWord = word.trim();
+            if (!cleanWord) return;
+
+            const existing = words.find(item => String(item.word).toLowerCase() === cleanWord.toLowerCase());
+            if (existing) {
+                setStatus("「" + cleanWord + "」已經存在。");
+                wordInput.value = "";
+                searchInput.value = cleanWord;
+                renderList();
                 return;
             }
 
-            // 先做自動查詢
-            const result = await autoLookup(wordRaw);
-            let phonetic = result.phonetic;
-            let meaning = result.meaning;
+            addBtn.disabled = true;
+            addBtn.textContent = "查詢中...";
+            setStatus("正在聯網查詢「" + cleanWord + "」的英標與中文翻譯...");
 
-            // 如果老師有手動輸入／修改，以老師輸入為主
-            if (phoneticInput.value.trim()) {
-                phonetic = phoneticInput.value.trim();
-            }
-            if (meaningInput.value.trim()) {
-                meaning = meaningInput.value.trim();
-            }
+            try {
+                const found = await lookupWord(cleanWord);
+                const payload = {
+                    action: "add",
+                    id: uid(),
+                    word: cleanWord,
+                    phonetic: found.phonetic || "",
+                    meaning: found.meaning || ""
+                };
+                const result = await apiPost(payload);
+                if (!result.ok) throw new Error(result.message || "新增失敗");
 
-            // 查不到任何資料時，提醒一次
-            if (!phonetic && !meaning) {
-                const confirmAdd = confirm("查不到「" + wordRaw + "」的音標或中文翻譯。\n\n是否仍然只存英文單字？");
-                if (!confirmAdd) {
-                    return;
+                words.push(result.data);
+                renderList();
+                wordInput.value = "";
+                wordInput.focus();
+
+                if (found.phonetic || found.meaning) {
+                    setStatus("已新增「" + cleanWord + "」。若內容不準確，可直接在該列修改。");
+                } else {
+                    setStatus("已新增「" + cleanWord + "」，但此次未查到英標或中文，你可以手動修改，或稍後按「重新查詢」。");
                 }
+            } catch (e) {
+                console.error(e);
+                setStatus("新增失敗，請檢查 Apps Script 權限或稍後再試。");
             }
 
-            words.push({
-                word: wordRaw,
-                phonetic: phonetic,
-                meaning: meaning
-            });
+            addBtn.disabled = false;
+            addBtn.textContent = "新增到清單";
+        }
 
-            saveToStorage();
-            renderTable();
+        async function refreshWord(id) {
+            const item = words.find(x => String(x.id) === String(id));
+            if (!item) return;
+            setStatus("正在重新查詢「" + item.word + "」...");
+            try {
+                const found = await lookupWord(item.word);
+                const payload = {
+                    action: "update",
+                    id: item.id,
+                    word: item.word,
+                    phonetic: found.phonetic || item.phonetic || "",
+                    meaning: found.meaning || item.meaning || ""
+                };
+                const result = await apiPost(payload);
+                if (!result.ok) throw new Error(result.message || "更新失敗");
 
-            wordForm.reset();
-            wordInput.focus();
+                item.word = payload.word;
+                item.phonetic = payload.phonetic;
+                item.meaning = payload.meaning;
+                renderList();
+                setStatus("已更新「" + item.word + "」的查詢結果。");
+            } catch (e) {
+                console.error(e);
+                setStatus("重新查詢失敗。");
+            }
+        }
+
+        async function updateField(id, field, value) {
+            const item = words.find(x => String(x.id) === String(id));
+            if (!item) return;
+            item[field] = value;
+            try {
+                const result = await apiPost({
+                    action: "update",
+                    id: item.id,
+                    word: item.word || "",
+                    phonetic: item.phonetic || "",
+                    meaning: item.meaning || ""
+                });
+                if (!result.ok) throw new Error(result.message || "儲存失敗");
+                setStatus("已同步更新「" + (item.word || "") + "」。");
+            } catch (e) {
+                console.error(e);
+                setStatus("同步更新失敗，請稍後再試。");
+            }
+        }
+
+        async function deleteWord(id) {
+            try {
+                const result = await apiPost({ action: "delete", id: id });
+                if (!result.ok) throw new Error(result.message || "刪除失敗");
+                words = words.filter(item => String(item.id) !== String(id));
+                renderList();
+                setStatus("已刪除一筆單字。");
+            } catch (e) {
+                console.error(e);
+                setStatus("刪除失敗，請稍後再試。");
+            }
+        }
+
+        wordForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            await addWord(wordInput.value);
         });
 
-        // ---------------- 初始化 ----------------
-        loadFromStorage();
-        renderTable();
+        searchInput.addEventListener("input", renderList);
+        letterFilter.addEventListener("change", renderList);
+
+        letterBar.addEventListener("click", function (e) {
+            const btn = e.target.closest(".letter-btn");
+            if (!btn) return;
+            letterFilter.value = btn.dataset.letter;
+            renderList();
+        });
+
+        listContainer.addEventListener("change", async function (e) {
+            const input = e.target.closest(".edit-input");
+            if (!input) return;
+            const row = e.target.closest(".word-row");
+            const id = row ? row.dataset.id : "";
+            const field = input.dataset.field;
+            await updateField(id, field, input.value);
+            renderList();
+        });
+
+        listContainer.addEventListener("click", async function (e) {
+            const header = e.target.closest(".group-header");
+            if (header) {
+                const group = header.closest(".group");
+                const letter = group ? group.dataset.letter : "";
+                collapsedLetters[letter] = !group.classList.contains("collapsed");
+                group.classList.toggle("collapsed");
+                return;
+            }
+
+            const speakBtn = e.target.closest(".speak-btn");
+            if (speakBtn) {
+                speakWord(speakBtn.dataset.word || "");
+                return;
+            }
+
+            const deleteBtn = e.target.closest(".delete-btn");
+            if (deleteBtn) {
+                if (confirm("確定要刪除這個單字嗎？")) {
+                    await deleteWord(deleteBtn.dataset.id);
+                }
+                return;
+            }
+
+            const refreshBtn = e.target.closest(".refresh-btn");
+            if (refreshBtn) {
+                await refreshWord(refreshBtn.dataset.id);
+            }
+        });
+
+        clearAllBtn.addEventListener("click", async function () {
+            if (!words.length) return;
+            if (!confirm("確定要清空全部單字嗎？此動作無法復原。")) return;
+            const ids = words.map(item => item.id);
+            for (const id of ids) {
+                await deleteWord(id);
+            }
+            setStatus("已清空全部單字。");
+        });
+
+        loadWords();
     </script>
 </body>
 </html>
