@@ -73,6 +73,11 @@
             cursor: pointer;
             padding: 10px 14px;
             font-size: 15px;
+            transition: opacity 0.2s;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
         .primary {
             background: var(--accent);
@@ -244,7 +249,7 @@
             <div class="status" id="statusText">載入中...</div>
             <div class="tip">
                 新增時會自動聯網查英標與中文翻譯。<br>
-                如果抓到的內容不理想，你可以直接在每一列裡改字、改英標、改中文，改完會同步到 Google Sheet。<br>
+                如果抓到的內容不理想，你可以直接在每一列裡改字、改英標、改中文，改完會自動同步到 Google Sheet。<br>
                 每個字母群組都可收合，換電腦也能看到同一份資料。
             </div>
         </div>
@@ -253,7 +258,9 @@
     </div>
 
     <script>
+        // ⭐⭐⭐ 請務必把這裡換成你最新部署的 Apps Script 網址！ ⭐⭐⭐
         const API_URL = "https://script.google.com/macros/s/AKfycbwe395AqexET9c7IlTMrk2bcaeuNrmtMCqXdpyaR6IiOQI_iJctppUt98-iGO3ajlmi6g/exec";
+        
         let words = [];
         let collapsedLetters = {};
 
@@ -424,22 +431,49 @@
             listContainer.innerHTML = html;
         }
 
-        async function fetchPhonetic(word) {
-            try {
-                const url = "https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(word);
-                const res = await fetch(url);
-                if (!res.ok) return "";
-                const data = await res.json();
-                if (!Array.isArray(data) || !data[0]) return "";
-                if (Array.isArray(data[0].phonetics)) {
-                    const found = data[0].phonetics.find(p => p && p.text);
-                    if (found && found.text) return found.text;
+        // 🟢 優化 1：支援片語拆解與雙 API 備援的查音標功能
+        async function fetchPhonetic(phrase) {
+            const parts = phrase.trim().split(/\s+/);
+            let phonetics = [];
+
+            for (let word of parts) {
+                let p = await getSingleWordPhonetic(word.toLowerCase());
+                if (p) {
+                    phonetics.push("/" + p.replace(/\//g, "") + "/");
+                } else {
+                    phonetics.push("[?]");
                 }
-                return data[0].phonetic || "";
-            } catch (e) {
-                console.error("fetchPhonetic error", e);
-                return "";
             }
+            return phonetics.every(p => p === "[?]") ? "" : phonetics.join(" ");
+        }
+
+        async function getSingleWordPhonetic(word) {
+            // 優先查 Free Dictionary
+            try {
+                const res = await fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(word));
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data[0] && data[0].phonetics) {
+                        const found = data[0].phonetics.find(p => p && p.text);
+                        if (found) return found.text;
+                    }
+                    if (data[0] && data[0].phonetic) return data[0].phonetic;
+                }
+            } catch (e) {}
+
+            // 備援查 Datamuse API (解決 proxies, captions 等變形字)
+            try {
+                const res2 = await fetch("https://api.datamuse.com/words?sp=" + encodeURIComponent(word) + "&md=r&ipa=1&max=1");
+                if (res2.ok) {
+                    const data2 = await res2.json();
+                    if (data2[0] && data2[0].tags) {
+                        const ipaTag = data2[0].tags.find(t => t.startsWith("ipa_pron:"));
+                        if (ipaTag) return ipaTag.replace("ipa_pron:", "");
+                    }
+                }
+            } catch (e) {}
+
+            return ""; 
         }
 
         async function fetchChineseTranslation(word) {
@@ -480,7 +514,7 @@
 
         async function lookupWord(word) {
             const cleanWord = word.trim();
-            const phoneticPromise = fetchPhonetic(cleanWord.toLowerCase());
+            const phoneticPromise = fetchPhonetic(cleanWord);
             const meaningPromise = fetchChineseTranslation(cleanWord);
             const phonetic = await phoneticPromise;
             const meaning = await meaningPromise;
@@ -522,9 +556,9 @@
                 wordInput.focus();
 
                 if (found.phonetic || found.meaning) {
-                    setStatus("已新增「" + cleanWord + "」。若內容不準確，可直接在該列修改。");
+                    setStatus("已新增「" + cleanWord + "」。");
                 } else {
-                    setStatus("已新增「" + cleanWord + "」，但此次未查到英標或中文，你可以手動修改，或稍後按「重新查詢」。");
+                    setStatus("已新增「" + cleanWord + "」，但未查到資料，請手動補齊。");
                 }
             } catch (e) {
                 console.error(e);
@@ -600,7 +634,13 @@
             await addWord(wordInput.value);
         });
 
-        searchInput.addEventListener("input", renderList);
+        // 🟢 優化 2：加入防抖 (Debounce) 的搜尋，打字不再卡頓
+        let searchTimeout;
+        searchInput.addEventListener("input", function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(renderList, 300); 
+        });
+        
         letterFilter.addEventListener("change", renderList);
 
         letterBar.addEventListener("click", function (e) {
@@ -610,14 +650,16 @@
             renderList();
         });
 
+        // 🟢 優化 3：移除 renderList()，避免修改輸入框時游標遺失
         listContainer.addEventListener("change", async function (e) {
             const input = e.target.closest(".edit-input");
             if (!input) return;
             const row = e.target.closest(".word-row");
             const id = row ? row.dataset.id : "";
             const field = input.dataset.field;
+            
             await updateField(id, field, input.value);
-            renderList();
+            // 已經從這裡拿掉了 renderList()，畫面不會閃爍了！
         });
 
         listContainer.addEventListener("click", async function (e) {
@@ -650,14 +692,27 @@
             }
         });
 
+        // 🟢 優化 4：一鍵清空改為單次 API 請求，不再塞爆 Google
         clearAllBtn.addEventListener("click", async function () {
             if (!words.length) return;
             if (!confirm("確定要清空全部單字嗎？此動作無法復原。")) return;
-            const ids = words.map(item => item.id);
-            for (const id of ids) {
-                await deleteWord(id);
+
+            setStatus("正在清空全部單字...");
+            clearAllBtn.disabled = true;
+
+            try {
+                const result = await apiPost({ action: "clearAll" });
+                if (!result.ok) throw new Error(result.message || "清空失敗");
+                
+                words = [];
+                renderList();
+                setStatus("已清空全部單字。");
+            } catch (e) {
+                console.error(e);
+                setStatus("清空失敗，請稍後再試。");
+            } finally {
+                clearAllBtn.disabled = false;
             }
-            setStatus("已清空全部單字。");
         });
 
         loadWords();
